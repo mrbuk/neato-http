@@ -1,0 +1,12 @@
+[Unit]
+Description=neato-http service
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/docker start -a neato-http
+ExecStop=/usr/bin/docker stop -t 10 neato-http
+
+[Install]
+WantedBy=multi-user.target
