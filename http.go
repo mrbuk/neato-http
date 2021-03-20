@@ -62,8 +62,8 @@ func start(w http.ResponseWriter) {
 		return
 	}
 
-	// if robot is busy, we try to be idempotent
-	if s.State == neato.StateBusy {
+	// if robot is busy, we try to be idempotent. Ignore server errors
+	if c, _ := robot.IsCleaning(); c {
 		log.Println("robot is cleaning already")
 		w.Header().Add("content-type", "application/json")
 		io.WriteString(w, fmt.Sprintf(`{"result": "%s"}`, "ok"))

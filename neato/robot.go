@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -96,6 +97,8 @@ func (n *NeatoRobot) sendCommand(command string) ([]byte, error) {
 		return nil, err
 	}
 
+	// debug log
+	log.Printf("raw response: '%s'", body)
 	return []byte(body), nil
 }
 
@@ -134,8 +137,16 @@ func (n *NeatoRobot) IsCleaning() (bool, error) {
 		return false, err
 	}
 
-	if state.Action == StateBusy {
-		return true, nil
+	// to understand if the robot is cleaning it needs to be in "busy" state
+	// with a certain "cleaning" action present
+	if state.State == StateBusy {
+		switch state.Action {
+		case ActionHouseCleaning:
+		case ActionManualCleaning:
+		case ActionSpotCleaning:
+		case ActionMapCleaning:
+			return true, nil
+		}
 	}
 
 	return false, nil
@@ -164,7 +175,7 @@ func (n *NeatoRobot) StartCleaning(withoutMap bool) (*StandardResponse, error) {
 	return &r, nil
 }
 
-// StartCleaning start map based house cleaning program
+// ResumeCleaning start map based house cleaning program
 func (n *NeatoRobot) ResumeCleaning() (*StandardResponse, error) {
 	command := `{"reqId": "77", "cmd": "resumeCleaning"}`
 	b, err := n.sendCommand(command)
