@@ -54,7 +54,7 @@ func start(w http.ResponseWriter) {
 
 	// if robot is busy, we try to be idempotent
 	if s.State == neato.StateBusy {
-		io.WriteString(w, fmt.Sprintf(`{"result": ""}`, "ok"))
+		io.WriteString(w, fmt.Sprintf(`{"result": "%s"}`, "ok"))
 		return
 	}
 
