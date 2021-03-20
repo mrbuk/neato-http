@@ -3,10 +3,17 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/mrbuk/neato-http/neato"
 )
+
+func handleError(err error, w http.ResponseWriter) {
+	log.Printf("error: %s", err)
+	w.WriteHeader(http.StatusBadRequest)
+	io.WriteString(w, fmt.Sprintf(`{"result": "%s", "error": "%s"}`, "error", err))
+}
 
 // HouseCleaningFunc ask RESTish meaning:
 //  - GET will fetch the current cleaning state
@@ -31,9 +38,10 @@ func HouseCleaningFunc(w http.ResponseWriter, r *http.Request) {
 
 // state returns the current cleaning state of the robot
 func state(w http.ResponseWriter) {
+	log.Println("Checking cleaning state")
 	isCleaning, err := robot.IsCleaning()
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		handleError(err, w)
 		return
 	}
 	w.Header().Add("content-type", "application/json")
@@ -45,24 +53,25 @@ func state(w http.ResponseWriter) {
 //  - if the robot is not cleaning start cleaning with map
 //  - if the robot is not at the base start cleaning without a map
 func start(w http.ResponseWriter) {
-
+	log.Println("start of cleaning cycle")
 	s, err := robot.GetState()
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		handleError(err, w)
 		return
 	}
 
 	// if robot is busy, we try to be idempotent
 	if s.State == neato.StateBusy {
-		io.WriteString(w, fmt.Sprintf(`{"result": "%s"}`, "ok"))
+		handleError(err, w)
 		return
 	}
 
 	// if the robot is paused we try to unpause it
 	if s.State == neato.StatePaused {
+		log.Println("robot is paused, trying to resume cleaning")
 		r, err := robot.ResumeCleaning()
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			handleError(err, w)
 			return
 		}
 		w.Header().Add("content-type", "application/json")
@@ -73,18 +82,20 @@ func start(w http.ResponseWriter) {
 	// start regular cleaning cycle if robot is in idle state
 	if s.State == neato.StateIdle {
 		// try to clean with maps
+		log.Println("robot is idle, cleaning with map")
 		r, err := robot.StartCleaning(false)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			handleError(err, w)
 			return
 		}
 
 		// in case robot is not on charge base or the command
 		// to clean without maps
 		if r.Result == "not_on_charge_base" {
+			log.Println("robot is not on charge base, cleaning without map")
 			r, err = robot.StartCleaning(true)
 			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
+				handleError(err, w)
 				return
 			}
 		}
@@ -101,9 +112,10 @@ func stop(w http.ResponseWriter) {
 	//	return
 	//}
 
+	log.Println("sending robot back to base")
 	r, err := robot.SendToBase()
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		handleError(err, w)
 		return
 	}
 

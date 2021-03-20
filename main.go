@@ -22,6 +22,7 @@ func main() {
 	}
 
 	http.HandleFunc("/houseCleaning", HouseCleaningFunc)
+	log.Println("Starting neato-http server")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
