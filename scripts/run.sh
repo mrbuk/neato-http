@@ -9,4 +9,4 @@ docker run --init \
     -e NEATO_ROBOT_SECRET=12334
     -p 8102:8080 \
     --name neato-http\
-    mrbuk/neato-http:0.3
+    mrbuk/neato-http:0.4
