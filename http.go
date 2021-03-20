@@ -44,8 +44,10 @@ func state(w http.ResponseWriter) {
 		handleError(err, w)
 		return
 	}
+	s := fmt.Sprintf(`{"cleaning": %t}`, isCleaning)
+	log.Printf("state = '%s'\n", s)
 	w.Header().Add("content-type", "application/json")
-	io.WriteString(w, fmt.Sprintf(`{"cleaning": %t}`, isCleaning))
+	io.WriteString(w, s)
 }
 
 // start is putting the robot in house cleaning mode in the following way
@@ -62,7 +64,9 @@ func start(w http.ResponseWriter) {
 
 	// if robot is busy, we try to be idempotent
 	if s.State == neato.StateBusy {
-		handleError(err, w)
+		log.Println("robot is cleaning already")
+		w.Header().Add("content-type", "application/json")
+		io.WriteString(w, fmt.Sprintf(`{"result": "%s"}`, "ok"))
 		return
 	}
 
