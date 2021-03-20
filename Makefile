@@ -1,5 +1,5 @@
 name = neato-http
-version = 0.2
+version = 0.3
 user = mrbuk
 
 all: build
